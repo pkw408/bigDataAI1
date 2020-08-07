@@ -87,6 +87,7 @@ ggplot(top20, aes(words,freq)) + geom_col() + coord_flip() +
     ggtitle("국정원 트윗 분석") +
     geom_text(aes(label=freq), hjust=-1, color="#FF0000") # 글자색 설정가능
 ###############################################################################################################################
+# 개인적 실습!
 msg <- readLines("msg.txt",encoding = "UTF-8")
 
 library(KoNLP)
@@ -94,14 +95,14 @@ useSejongDic()  # 우리나라말 사전 등록
 
 #[:punct:] (출력 가능한 (눈에 보이는) 특수 문자)      # 위 3가지 다양한 함수(같은역할)
 library(stringr) # gusb을 사용하기 위해
-msg <- gsub("[[:punct:][:digit:][:cntrl:]]", "" ,msg) # --> 숫자랑 특수문자만 제거
+msg <- gsub("[[:punct:][:digit:][:cntrl:]]", "" ,msg) # --> 숫자랑 특수문자, 제어문자 제거
+msg <- gsub("^[a-zA-Z]*$","",msg)
 msg <- gsub("\\W","",msg)
 msg <- gsub('[~!@#$%^&*()_+=?]<>','',msg)
 msg <- gsub('저장한 날짜 : \\d{,2}','',msg)
 msg <- gsub('\\(이모티콘\\)','',msg)
 msg <- gsub('[ㄱ-ㅎ]','',msg)
 msg <- gsub('(ㅜ|ㅠ)+','',msg)
-
 
 nouns <- extractNoun(msg)
 class(nouns)
@@ -113,14 +114,21 @@ wordCount <- table(nouns)
 df_wordCount <- as.data.frame(wordCount)
 df_wordCount <- rename(df_wordCount,words = nouns, freq=Freq)
 
-df_wordCount$words <- gsub("^[a-zA-Z]*$","",df_wordCount$word)         # 빈칸을 삭제
 df_wordCount$words <- gsub("PM","",df_wordCount$word)         # 빈칸을 삭제
 df_wordCount$words <- gsub("AM","",df_wordCount$word)         # 빈칸을 삭제
 df_wordCount$words <- gsub("Oct","",df_wordCount$word)         # 빈칸을 삭제
 df_wordCount$words <- gsub("Sep","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("Aug","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("박경원","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("이쁘니유나","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("이쁘니유","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("박경","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("VoiceCal","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("Emoticon","",df_wordCount$word)         # 빈칸을 삭제
+df_wordCount$words <- gsub("Phot","",df_wordCount$word)         # 빈칸을 삭제
 
 
-top200 <- df_wordCount %>% filter(nchar(words)>=2) %>% arrange(desc(freq)) %>%  head(200)
+top200 <- df_wordCount %>% filter(nchar(words)>=2) %>% arrange(desc(freq)) %>%  head(30)
 
 # 워드 클라우드
 library(wordcloud)
@@ -143,12 +151,11 @@ wordcloud(
 library(ggplot2)
 order_desc <- arrange(top200,desc(freq)) # 그래프의 순서를 지정해주기 위해 저장.
 ggplot(top200, aes(words,freq)) + geom_col() + coord_flip() +
-    ylim(0,2500) +
+    ylim(0,500) +
     scale_x_discrete(limit = order_desc$words) +
     xlab("단어") +
     ylab("빈도수") +
-    ggtitle("국정원 트윗 분석") +
-    geom_text(aes(label=freq), hjust=-1, color="#FF0000") # 글자색 설정가능
+    geom_text(aes(label=freq), hjust=-20, color="#FF0000") # 글자색 설정가능
 
 
 ###############################################################################################################################
@@ -204,8 +211,8 @@ title <- gsub("신고","",title)
 
 # 리뷰를 기억할 빈 변수를 선언합니다.
 review = NULL
+################################################FOR 문(CSS 문법)#####################################################################
 
-################FOR 문 ##################
 # for(변수명 in 반복횟수) {
 #   반복할 문장
 #   ...
@@ -241,7 +248,7 @@ for(i in seq(10,1,-2)){
     print(i)
 }
 
-##############################################
+####################################################################################################################################
 
 for(i in seq(2,20,2)){
     review = c(review, title[i]) # 짝수번째 자료를 추가해준다.
@@ -272,72 +279,9 @@ for(i in seq(1,10)) {
 # Sys.sleep(1) 1초
 
 # 문제 
-# 네이버 평점 페이지를 1~3까지 크롤링하여 제목, 평점, 리뷰 를 합쳐 movie_revie.csv 파일로 저장합니다.
+# 네이버 평점 페이지를 1~100까지 크롤링하여 제목, 평점, 리뷰 를 합쳐 movie_revie.csv 파일로 저장합니다.
 
 review = NULL
-movie_review = NULL
-url_copy <- NULL
-site_copy <- "https://movie.naver.com/movie/point/af/list.nhn?&page="
-
-for(i in 1:3) {
-    url_copy <- paste(site_copy,i,seq="")
-    print(url_copy)
-    content <- read_html(url_copy, encoding = "CP949")
-    Sys.sleep(1)
-    
-    nodes <- html_nodes(content, ".movie")
-    movie <- html_text(nodes, trim=T)
-    
-    nodes <- html_nodes(content, "div.list_netizen_score > em")
-    points <- html_text(nodes, trim=T)
-    
-    nodes <- html_nodes(content,".title")
-    title <- html_text(nodes, trim=T)
-    title <- gsub("[[:cntrl:]]","",title)
-    title <- strsplit(title, "중[0-9]{1,2}")
-    title <- unlist(title)
-    title <- gsub("신고","",title)
-    
-
-    
-    for(a in seq(2,20,2)){
-        review = c(review, title[a])
-    }
-    
-
-    page <- cbind(movie,points)
-    page <- cbind(page,review)
-    movie_review <- rbind(movie_review,page)
-}
-
-# 웹 스크레이핑 된 데이터를 csv 파일로 저장시킨다.
-
-write.csv(page,"movie_review2.csv")
-
-
-
-# 네이버 영화 사이트에서 1~100 페이지 분량의 영화 리뷰 데이터를 이용해 영화별 평점 그래프를 출력합니다.
-movie_review <- read.csv("movie_review2.csv",stringsAsFactors=F)
-
-
-movie_review_mean <- movie_review %>% group_by(movie) %>%  summarise(
-    count = n(),
-    mean = round(mean(point),2)
-) %>% filter(count >= 6) %>%  arrnage(desc(count)) %>%  head(10)
-
-movie_review_mean
-
-ggplot(movie_review_mean, aes(reorder(movie,mean),mean)) + geom_col() + coord_flip() +
-    ggtitle("네이버 영화 평점순위") +
-    xlab("영화제목") + 
-    ylab("평점") +
-    geom_text(aes(label=mean),hjust=-0.5) +
-    geom_test(aes(label=count),hjust=4, color='white', size =8)
-
-
-
-
-###### 수업 자료 ########
 
 movie_review = NULL
 site <- "https://movie.naver.com/movie/point/af/list.nhn?&page="
@@ -370,11 +314,26 @@ for(i in seq(1, 100)){
     movie_review <- rbind(movie_review, page)
 }
 movie_review
-write.csv(movie_review, "movie_review.csv")
+write.csv(movie_review, "movie_review2.csv")
+
+###############################################################################################################################
+
+# 네이버 영화 사이트에서 1~100 페이지 분량의 영화 리뷰 데이터를 이용해 영화별 평점 그래프를 출력합니다.
+movie_review <- read.csv("movie_review2.csv",stringsAsFactors=F)
 
 
+movie_review_mean <- movie_review %>% group_by(movie) %>%  summarise(
+    count = n(),
+    mean = round(mean(point),2)
+) %>% filter(count >= 6) %>%  arrange(desc(count)) %>%  head(10)
 
+movie_review_mean
 
-
+ggplot(movie_review_mean, aes(reorder(movie,mean),mean)) + geom_col() + coord_flip() +
+    ggtitle("네이버 영화 평점순위") +
+    xlab("영화제목") + 
+    ylab("평점") +
+    geom_text(aes(label=mean),hjust=-0.5) +
+    geom_text(aes(label=count),hjust=4, color='white', size =8)
 
 
